@@ -124,11 +124,15 @@ class OpenClawA2AClient:
 
     # ── HTTP Client ─────────────────────────────────────────────────────────────
 
-    def _default_headers(self, trace_id: Optional[str] = None) -> dict[str, str]:
+    def _default_headers(
+        self,
+        trace_id: Optional[str] = None,
+        accept: Optional[str] = None,
+    ) -> dict[str, str]:
         headers: dict[str, str] = {
             "User-Agent": self.user_agent,
             "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
+            "Accept": accept or "application/json",
         }
         if self.api_key:
             headers["X-API-Key"] = self.api_key
@@ -324,6 +328,9 @@ class OpenClawA2AClient:
             stream=stream,
         )
 
+        # Use appropriate Accept header based on stream mode
+        accept = "text/event-stream" if stream else "application/json"
+
         with self.audit_logger.trace(
             "send_message",
             trace_id=trace_id,
@@ -334,7 +341,7 @@ class OpenClawA2AClient:
                 "POST",
                 "/message:send",
                 json_data=request.model_dump(by_alias=True, exclude_none=True, mode="json"),
-                headers=self._default_headers(trace_id),
+                headers=self._default_headers(trace_id, accept=accept),
             )
 
             result = SendMessageResponse.model_validate(response.json())
