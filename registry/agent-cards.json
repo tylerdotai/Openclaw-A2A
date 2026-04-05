@@ -7,7 +7,7 @@
       "ip": "192.168.0.59",
       "public_ip": "68.118.120.94",
       "a2a_port": 8080,
-      "a2a_url": "http://192.168.0.59:8080/a2a",
+      "a2a_url": "http://192.168.0.59:8080",
       "skills": [
         "python",
         "sdk",
@@ -18,28 +18,12 @@
       "last_seen": "2026-04-05T16:15:00Z"
     },
     {
-      "id": "brad",
-      "name": "Brad",
-      "host": "pi-221",
-      "ip": "192.168.0.221",
-      "a2a_port": 8082,
-      "a2a_url": "http://192.168.0.221:8082/a2a",
-      "skills": [
-        "audit",
-        "ci-cd",
-        "infrastructure",
-        "monitoring"
-      ],
-      "status": "active",
-      "last_seen": "2026-04-05T16:15:00Z"
-    },
-    {
       "id": "hoss",
       "name": "Hoss",
       "host": "mac-mini",
       "ip": "192.168.0.104",
       "a2a_port": 8081,
-      "a2a_url": "http://192.168.0.104:8081/a2a",
+      "a2a_url": "http://192.168.0.104:8081",
       "skills": [
         "coordination",
         "discovery",
@@ -47,7 +31,23 @@
         "integration"
       ],
       "status": "active",
-      "last_seen": "2026-04-05T16:35:39.912714+00:00"
+      "last_seen": "2026-04-05T16:15:00Z"
+    },
+    {
+      "id": "brad",
+      "name": "Brad",
+      "host": "pi-221",
+      "ip": "192.168.0.221",
+      "a2a_port": 8082,
+      "a2a_url": "http://192.168.0.221:8082",
+      "skills": [
+        "audit",
+        "ci-cd",
+        "infrastructure",
+        "monitoring"
+      ],
+      "status": "active",
+      "last_seen": "2026-04-05T16:53:38.539008+00:00"
     }
   ],
   "registry_version": "1.0.0"
