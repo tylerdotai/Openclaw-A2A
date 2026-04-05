@@ -307,7 +307,7 @@ class OpenClawA2AClient:
 
         # Normalize message to dict
         if isinstance(message, Message):
-            msg_dict = message.model_dump(by_alias=True, exclude_none=True)
+            msg_dict = message.model_dump(by_alias=True, exclude_none=True, mode="json")
         else:
             msg_dict = dict(message)
 
@@ -333,7 +333,7 @@ class OpenClawA2AClient:
             response = await self._request_with_retry(
                 "POST",
                 "/message:send",
-                json_data=request.model_dump(by_alias=True, exclude_none=True),
+                json_data=request.model_dump(by_alias=True, exclude_none=True, mode="json"),
                 headers=self._default_headers(trace_id),
             )
 
@@ -364,7 +364,7 @@ class OpenClawA2AClient:
         set_current_trace(trace_id)
 
         if isinstance(message, Message):
-            msg_dict = message.model_dump(by_alias=True, exclude_none=True)
+            msg_dict = message.model_dump(by_alias=True, exclude_none=True, mode="json")
         else:
             msg_dict = dict(message)
 
@@ -396,7 +396,7 @@ class OpenClawA2AClient:
                 async with client.stream(
                     "POST",
                     url,
-                    json=request.model_dump(by_alias=True, exclude_none=True),
+                    json=request.model_dump(by_alias=True, exclude_none=True, mode="json"),
                     headers=headers,
                     timeout=httpx.Timeout(self.timeout),
                 ) as response:
@@ -518,7 +518,7 @@ class OpenClawA2AClient:
             response = await self._request_with_retry(
                 "POST",
                 f"/tasks/{task_id}:cancel",
-                json_data=request.model_dump(by_alias=True, exclude_none=True),
+                json_data=request.model_dump(by_alias=True, exclude_none=True, mode="json"),
                 headers=self._default_headers(trace_id),
             )
 

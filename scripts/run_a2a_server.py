@@ -23,9 +23,9 @@ from pathlib import Path
 SDK_PATH = Path(__file__).parent.parent / "sdk" / "python"
 sys.path.insert(0, str(SDK_PATH))
 
-from openclawa2a.agent_card import AgentCardBuilder
+from openclawa2a.agent_card import AgentCard
 from openclawa2a.audit import AuditLogger
-from openclawa2a.models import Message, Task, TaskState, TaskStatus
+from openclawa2a.models import AgentCapabilities, AgentProvider, AgentSkill, Message, PartType
 from openclawa2a.server import A2AServer
 
 # Import registry helpers
@@ -50,9 +50,26 @@ class EchoA2AServer(A2AServer):
     def __init__(self, agent_id: str, agent_card: dict, audit_logger: AuditLogger):
         self.agent_id = agent_id
         self.audit = audit_logger
-        super().__init__(agent_card=AgentCardBuilder.from_dict(agent_card).build())
 
-    async def on_message(self, message: Message) -> Task:
+        # Build proper AgentCard from registry card (simplified format)
+        a2a_card = AgentCard(
+            name=agent_card.get("name", agent_id),
+            version="1.0.0",
+            description=f"A2A agent: {agent_id}",
+            provider=AgentProvider(
+                organization="flume",
+                url=f"http://{agent_card.get('ip')}:{agent_card.get('a2a_port')}/a2a",
+            ),
+            capabilities=AgentCapabilities(
+                streaming=True,
+                push_notifications=True,
+            ),
+            skills=[AgentSkill(id=s, name=s, description=s) for s in agent_card.get("skills", [])],
+            url=agent_card.get("a2a_url"),
+        )
+        super().__init__(agent_card=a2a_card)
+
+    async def handle_message(self, message: Message, context: dict) -> Message:
         """Handle incoming message — echo back with a response."""
         content = message.parts[0].get("text", "(empty)") if message.parts else "(empty)"
 
@@ -64,37 +81,15 @@ class EchoA2AServer(A2AServer):
             content=content,
         )
 
-        # Create echo response task
+        # Create echo response
         echo_text = f"[{self.agent_id.upper()}] Echo: {content}"
 
-        task = Task(
-            id=str(uuid.uuid4()),
-            context_id=message.context_id,
-            status=TaskStatus(
-                state=TaskState.COMPLETED,
-                message=Message(
-                    message_id=str(uuid.uuid4()),
-                    role="agent",
-                    parts=[{"text": echo_text}],
-                ),
-            ),
-            artifacts=[{
-                "artifact_id": str(uuid.uuid4()),
-                "name": "echo-response",
-                "parts": [{"text": echo_text}],
-            }],
+        logger.info(f"Processed message {message.message_id}")
+        return Message(
+            message_id=str(uuid.uuid4()),
+            role="agent",
+            parts=[{"kind": PartType.TEXT, "text": echo_text}],
         )
-
-        # Log task completion
-        self.audit.task_updated(
-            source=self.agent_id,
-            target="remote",
-            task_id=task.id,
-            status="completed",
-        )
-
-        logger.info(f"Processed message {message.message_id} → task {task.id}")
-        return task
 
 
 async def run_server(agent_id: str, port: int | None = None):

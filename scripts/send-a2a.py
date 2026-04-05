@@ -19,7 +19,7 @@ SDK_PATH = Path(__file__).parent.parent / "sdk" / "python"
 sys.path.insert(0, str(SDK_PATH))
 
 from openclawa2a.client import OpenClawA2AClient
-from openclawa2a.models import Message, Part
+from openclawa2a.models import Message, Part, PartType
 
 # Import registry helpers
 import importlib.util
@@ -55,7 +55,7 @@ async def send_message(
     msg = Message(
         message_id=str(uuid.uuid4()),
         role="user",
-        parts=[{"text": message}],
+        parts=[{"kind": PartType.TEXT, "text": message}],
     )
 
     ctx_id = context_id or str(uuid.uuid4())
@@ -63,11 +63,8 @@ async def send_message(
     try:
         result = await client.send_message(
             message=msg,
-            configuration={
-                "accepted_output_modes": ["text/plain", "application/json"],
-                "return_immediately": False,
-            },
             context_id=ctx_id,
+            stream=False,
         )
 
         print(f"\n✓ Message sent")
