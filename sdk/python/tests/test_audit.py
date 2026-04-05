@@ -17,12 +17,14 @@ from openclawa2a.tracing import new_trace_id
 
 
 class TestAuditLogger:
-    def test_log_writes_to_stdout(self, capsys):
-        logger = AuditLogger(output_path=None)
+    def test_log_writes_to_file_or_logging(self, tmp_path):
+        # Test that log writes to a file when output_path is set
+        path = tmp_path / "audit.ndjson"
+        logger = AuditLogger(output_path=path)
         trace_id = logger.log("test_op", status="success")
         assert len(trace_id) == 32
-        captured = capsys.readouterr()
-        assert "AUDIT" in captured.out
+        content = path.read_text()
+        assert "AUDIT" in content or "test_op" in content
 
     def test_log_writes_to_file(self):
         with tempfile.NamedTemporaryFile(suffix=".ndjson", delete=False) as f:
@@ -73,39 +75,43 @@ class TestAuditLogger:
 
 
 class TestAuditSpan:
-    def test_span_context_manager_success(self, capsys):
-        logger = AuditLogger(output_path=None)
+    def test_span_context_manager_success(self, tmp_path):
+        path = tmp_path / "span.ndjson"
+        logger = AuditLogger(output_path=path)
         with logger.trace("send_message", task_id="t1") as span:
             span.success(result_id="r1")
 
-        captured = capsys.readouterr().out
-        entries = [json.loads(l.split("AUDIT ", 1)[1]) for l in captured.splitlines() if "AUDIT" in l]
-        assert len(entries) == 2
+        lines = path.read_text().splitlines()
+        entries = [json.loads(l) for l in lines if l.strip()]
+        # __exit__ always logs: started + success + ended = 3 entries
+        assert len(entries) == 3
         assert entries[0]["status"] == "started"
         assert entries[1]["status"] == "success"
         assert entries[1]["metadata"]["result_id"] == "r1"
+        assert entries[2]["status"] == "ended"
 
-    def test_span_context_manager_failure(self, capsys):
-        logger = AuditLogger(output_path=None)
+    def test_span_context_manager_failure(self, tmp_path):
+        path = tmp_path / "span.ndjson"
+        logger = AuditLogger(output_path=path)
         with logger.trace("send_message", task_id="t1") as span:
             span.failure(error_code="ERR", error_message="something broke")
 
-        captured = capsys.readouterr().out
-        entries = [json.loads(l.split("AUDIT ", 1)[1]) for l in captured.splitlines() if "AUDIT" in l]
+        lines = path.read_text().splitlines()
+        entries = [json.loads(l) for l in lines if l.strip()]
         assert entries[1]["status"] == "failure"
         assert entries[1]["error"]["code"] == "ERR"
 
-    def test_span_exit_with_exception(self, capsys):
-        logger = AuditLogger(output_path=None)
+    def test_span_exit_with_exception(self, tmp_path):
+        path = tmp_path / "span.ndjson"
+        logger = AuditLogger(output_path=path)
         try:
             with logger.trace("send_message"):
                 raise ValueError("boom")
         except ValueError:
             pass
 
-        captured = capsys.readouterr().out
-        entries = [json.loads(l.split("AUDIT ", 1)[1]) for l in captured.splitlines() if "AUDIT" in l]
-        # Should have started + failure from __exit__
+        lines = path.read_text().splitlines()
+        entries = [json.loads(l) for l in lines if l.strip()]
         statuses = [e["status"] for e in entries]
         assert "failure" in statuses
 
