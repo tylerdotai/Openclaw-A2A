@@ -197,3 +197,71 @@ Core skills needed:
 ---
 
 _Last updated: 2026-04-05 by Hoss_
+---
+
+## Agent Card Registry Architecture
+
+### Overview
+Each agent maintains an **Agent Card** in `registry/agent-cards.json` (GitHub-tracked). This is the shared registry for discovery.
+
+### Registry Location
+```
+registry/
+└── agent-cards.json    # Source of truth for all agent endpoints
+```
+
+### Card Schema
+```json
+{
+  "id": "dexter",
+  "name": "Dexter",
+  "host": "clawbox",
+  "ip": "192.168.0.59",
+  "public_ip": "68.118.120.94",
+  "a2a_port": 8080,
+  "a2a_url": "http://192.168.0.59:8080/a2a",
+  "skills": ["python", "sdk", "implementation", "deployment"],
+  "status": "active",
+  "last_seen": "2026-04-05T16:15:00Z"
+}
+```
+
+### Network Topology
+| Agent | Local IP | A2A Port | Notes |
+|-------|----------|----------|-------|
+| Dexter | 192.168.0.59 | 8080 | Public IP: 68.118.120.94 |
+| Hoss | 192.168.0.104 | 8081 | Mac mini M4 Pro |
+| Brad | 192.168.0.221 | 8082 | Raspberry Pi 4 |
+
+All three agents are on the same 192.168.0.x LAN — direct IP communication works.
+
+### Discovery Workflow
+```
+1. Agent pulls: git pull origin main (registry/agent-cards.json)
+2. Agent reads: target's a2a_url from their card
+3. Agent sends: SDK.send_message() → a2a_url
+4. Target receives: A2AServer.on_message()
+5. Agent logs: AuditLogger.task_created() → audit/logs/
+```
+
+### Maintenance
+- Agents should call `registry.py --heartbeat` on startup
+- Cards are updated in GitHub and pulled by other agents
+- Registry is the coordination layer — actual A2A traffic is direct LAN
+
+### Scripts
+```bash
+# Register / update your agent card
+python3 scripts/registry.py --register --agent dexter
+
+# Discover all agents
+python3 scripts/registry.py --list
+
+# Send a message to another agent
+python3 scripts/send-a2a.py --from dexter --to hoss --message "Hello CEO"
+
+# Start your A2A server
+python3 scripts/run-a2a-server.py --agent dexter --port 8080
+```
+
+_Last updated: 2026-04-05 by Dexter_
