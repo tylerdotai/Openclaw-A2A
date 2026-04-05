@@ -71,14 +71,13 @@ class EchoA2AServer(A2AServer):
 
     async def handle_message(self, message: Message, context: dict) -> Message:
         """Handle incoming message — echo back with a response."""
-        content = message.parts[0].get("text", "(empty)") if message.parts else "(empty)"
+        content = message.parts[0].text if message.parts else "(empty)"
 
         # Log receipt
-        self.audit.message_received(
-            source="remote",
-            target=self.agent_id,
-            message_id=message.message_id,
-            content=content,
+        self.audit.log(
+            "message_received",
+            agent_id=self.agent_id,
+            metadata={"message_id": message.message_id, "content": content},
         )
 
         # Create echo response

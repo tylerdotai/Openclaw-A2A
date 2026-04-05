@@ -565,6 +565,7 @@ class A2AServer(ABC):
 
         self._server = await asyncio.start_server(handler, host, port)
         logger.info("A2A server listening on %s:%s", host, port)
+        await self._server.serve_forever()
 
     async def stop(self) -> None:
         """Stop the HTTP server."""
