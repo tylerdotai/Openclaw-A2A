@@ -27,7 +27,15 @@ from openclawa2a.agent_card import AgentCardBuilder
 from openclawa2a.audit import AuditLogger
 from openclawa2a.models import Message, Task, TaskState, TaskStatus
 from openclawa2a.server import A2AServer
-from scripts.registry import discover_agent, heartbeat
+
+# Import registry helpers
+import importlib.util
+registry_path = Path(__file__).parent / "registry.py"
+spec = importlib.util.spec_from_file_location("registry", registry_path)
+registry_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(registry_module)
+discover_agent = registry_module.discover_agent
+heartbeat = registry_module.heartbeat
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,16 +54,18 @@ class EchoA2AServer(A2AServer):
 
     async def on_message(self, message: Message) -> Task:
         """Handle incoming message — echo back with a response."""
+        content = message.parts[0].get("text", "(empty)") if message.parts else "(empty)"
+
         # Log receipt
         self.audit.message_received(
             source="remote",
             target=self.agent_id,
             message_id=message.message_id,
-            content=message.parts[0].text if message.parts else "",
+            content=content,
         )
 
         # Create echo response task
-        echo_text = f"[{self.agent_id.upper()}] Echo: {message.parts[0].text if message.parts else '(empty)'}"
+        echo_text = f"[{self.agent_id.upper()}] Echo: {content}"
 
         task = Task(
             id=str(uuid.uuid4()),
