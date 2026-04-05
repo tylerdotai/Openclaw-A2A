@@ -47,11 +47,12 @@ class TestA2AServerConstruction:
         )
         agent = EchoAgent(agent_card=card)
         assert agent.agent_card.name == "TestAgent"
-        assert agent.agent_card.agent_id == "testorg/TestAgent"
+        assert agent.agent_card.agent_id == "testorg/testagent"
 
     def test_repr(self):
         agent = EchoAgent()
-        assert "EchoAgent" in repr(agent)
+        assert "A2AServer" in repr(agent)
+        assert "openclaw-agent" in repr(agent)
 
 
 class TestTaskStore:

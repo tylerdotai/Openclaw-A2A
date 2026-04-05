@@ -7,6 +7,7 @@ All models are backward-compatible and validation-first.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Annotated, Any, Literal, Optional
@@ -234,7 +235,8 @@ class AgentCard(BaseModel):
 
     @property
     def agent_id(self) -> str:
-        return f"{self.provider.organization}/{self.name}"
+        slug = re.sub(r'[^a-z0-9]+', '-', self.name.lower()).strip('-')
+        return f"{self.provider.organization}/{slug}"
 
 
 # ── Requests / Responses ──────────────────────────────────────────────────────
