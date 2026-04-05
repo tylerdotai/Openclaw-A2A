@@ -2,56 +2,69 @@
  * Tests for OpenClaw A2A TypeScript SDK
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenClawA2AClient, A2AError } from '../src/client';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: () => ({
-      post: vi.fn(),
-      get: vi.fn(),
-    }),
-  },
-}));
+const { mockPost, mockGet, mockCreate } = vi.hoisted(() => {
+  const post = vi.fn();
+  const get = vi.fn();
+  const create = vi.fn(() => ({ post, get }));
+  return { mockPost: post, mockGet: get, mockCreate: create };
+});
+
+vi.mock('axios', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('axios')>();
+  return {
+    __esModule: true,
+    default: {
+      ...actual.default,
+      create: mockCreate,
+    },
+    AxiosError: actual.AxiosError,
+  };
+});
 
 describe('OpenClawA2AClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('creates a client with base URL', () => {
     const client = new OpenClawA2AClient('http://localhost:8080/a2a');
     expect(client).toBeDefined();
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: 'http://localhost:8080/a2a' })
+    );
   });
 
   it('strips trailing slashes from URL', () => {
     const client = new OpenClawA2AClient('http://localhost:8080/a2a/');
     expect(client).toBeDefined();
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: 'http://localhost:8080/a2a' })
+    );
   });
 
-  it('creates valid JSON-RPC request for sendMessage', async () => {
-    const mockPost = vi.fn().mockResolvedValue({
+  it('sends a message and returns task result', async () => {
+    const mockTask = {
+      id: 'task-123',
+      status: { state: 'completed' as const },
+    };
+
+    mockPost.mockResolvedValueOnce({
       data: {
         jsonrpc: '2.0',
         id: '1',
-        result: {
-          task: {
-            id: 'task-123',
-            status: { state: 'completed' },
-          },
-        },
+        result: { task: mockTask },
       },
-    });
-
-    const { default: axios } = require('axios');
-    axios.create = () => ({
-      post: mockPost,
-      get: vi.fn(),
     });
 
     const client = new OpenClawA2AClient('http://localhost:8080/a2a');
     const result = await client.sendMessage({
       message: {
         message_id: 'msg-1',
-        role: 'user',
-        parts: [{ kind: 'text', text: 'Hello' }],
+        role: 'user' as const,
+        parts: [{ kind: 'text' as const, text: 'Hello' }],
       },
     });
 
@@ -66,7 +79,7 @@ describe('OpenClawA2AClient', () => {
   });
 
   it('throws A2AError on JSON-RPC error response', async () => {
-    const mockPost = vi.fn().mockResolvedValue({
+    mockPost.mockResolvedValueOnce({
       data: {
         jsonrpc: '2.0',
         id: '1',
@@ -77,38 +90,32 @@ describe('OpenClawA2AClient', () => {
       },
     });
 
-    const { default: axios } = require('axios');
-    axios.create = () => ({
-      post: mockPost,
-      get: vi.fn(),
-    });
-
     const client = new OpenClawA2AClient('http://localhost:8080/a2a');
 
     await expect(
       client.sendMessage({
         message: {
           message_id: 'msg-1',
-          role: 'user',
-          parts: [{ kind: 'text', text: 'Hello' }],
+          role: 'user' as const,
+          parts: [{ kind: 'text' as const, text: 'Hello' }],
         },
       })
     ).rejects.toThrow('Method not found');
   });
 
   it('extracts text from task artifacts', async () => {
-    const mockPost = vi.fn().mockResolvedValue({
+    mockPost.mockResolvedValueOnce({
       data: {
         jsonrpc: '2.0',
         id: '1',
         result: {
           task: {
             id: 'task-456',
-            status: { state: 'completed' },
+            status: { state: 'completed' as const },
             artifacts: [
               {
                 name: 'response',
-                parts: [{ kind: 'text', text: 'Hello from agent' }],
+                parts: [{ kind: 'text' as const, text: 'Hello from agent' }],
               },
             ],
           },
@@ -116,18 +123,12 @@ describe('OpenClawA2AClient', () => {
       },
     });
 
-    const { default: axios } = require('axios');
-    axios.create = () => ({
-      post: mockPost,
-      get: vi.fn(),
-    });
-
     const client = new OpenClawA2AClient('http://localhost:8080/a2a');
     const result = await client.sendMessage({
       message: {
         message_id: 'msg-1',
-        role: 'user',
-        parts: [{ kind: 'text', text: 'Hello' }],
+        role: 'user' as const,
+        parts: [{ kind: 'text' as const, text: 'Hello' }],
       },
     });
 

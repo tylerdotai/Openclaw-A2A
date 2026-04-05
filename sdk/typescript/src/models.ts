@@ -73,7 +73,7 @@ export interface JSONRPCRequest {
 
 export interface JSONRPCResponse {
   jsonrpc: '2.0';
-  id: string | number;
+  id: string | number | null;
   result?: SendMessageResponse;
   error?: JSONRPCError;
 }
@@ -98,6 +98,8 @@ export interface AgentCapabilities {
   streaming?: boolean;
   push_notifications?: boolean;
   extended_agent_card?: boolean;
+  state_transition_history?: boolean;
+  extensions?: string[];
 }
 
 export interface AgentProvider {
@@ -110,6 +112,7 @@ export interface AgentSkill {
   name: string;
   description?: string;
   tags?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AgentCard {

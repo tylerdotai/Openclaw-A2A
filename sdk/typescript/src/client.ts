@@ -162,7 +162,7 @@ export class OpenClawA2AClient {
         );
       }
 
-      return (response.data.result as { tasks: Task[] }).tasks;
+      return (response.data.result as unknown as { tasks: Task[] }).tasks;
     } catch (error) {
       throw this.wrapError(error as Error);
     }
