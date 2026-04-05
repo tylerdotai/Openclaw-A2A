@@ -35,8 +35,8 @@ Each agent exposes an Agent Card for discovery:
 GET /agents/{agent-id}/card
 ```
 
-**Hoss Card:** `http://192.168.0.104:18789/agents/hoss/card`
-**Dexter Card:** `http://192.168.0.59:18789/agents/dexter/card`
+**Hoss Card:** `http://192.168.0.28:18789/agents/hoss/card`
+**Dexter Card:** `http://clawbox:18789/agents/dexter/card`
 **Brad Card:** `http://192.168.0.221:18789/agents/brad/card`
 
 ### Task Delegation via A2A
@@ -150,9 +150,17 @@ All code must follow:
 ### Infrastructure
 | Host | IP | Agent | Purpose |
 |------|-----|-------|---------|
-| clawbox | .59 | Dexter | Primary compute, OpenClaw, SearXNG, Qdrant |
-| Mac mini | .104 | Hoss | Backup compute, OpenClaw, Chrome DevTools |
-| Pi 4 | .221 | Brad | Lightweight monitoring, backup |
+| ClawBox | clawbox | Dexter | Primary compute (32 cores, 128GB), OpenClaw, SearXNG, Qdrant |
+| Mac mini M4 | .28 | Hoss | Main agent, Flume, Terminal Portfolio, Autoresearch |
+| Pi 4 | .221 | Brad | Lightweight monitoring, orchestration, backup |
+
+### Brad Deliverables (CIO)
+Brad's assigned work for this project:
+- `audit/` — Audit logging module (see `audit/README.md`)
+- `skills/openclaw-a2a-coordination/` — A2A project skill template
+- `skills/a2a-audit/` — Audit/trace skill for agent communications
+- `scripts/build.sh` — CI/CD pipeline (lint, test, audit, docs)
+- `audit/query.py` — Query interface for audit logs
 
 ### Shared Services (on clawbox)
 - **SearXNG:** `http://localhost:8888`
